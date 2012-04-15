@@ -122,16 +122,6 @@ def tokenize_text(text):
     return tokens
 
 
-def tokenize(file_path):
-    with open(file_path) as f:
-        data = f.read().strip()
-    return tokenize_text(data)
-
-
-def tokenize_from_url(url):
-    data = urllib2.urlopen(url).read().strip()
-    return tokenize_text(data)
-
 # Thinking about meter:
 # In "there once" [was a man from Nantucket], I'd want to see that "there" is unstressed, and "once" is stressed
 # But cmudict sees the single vowel in each of them as 1 (primary stress), because it looks at each word in isolation

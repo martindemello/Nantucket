@@ -1,14 +1,10 @@
 #!/Library/Frameworks/Python.framework/Versions/2.7/bin/python
 
-import poetry
 import argparse
 import cgi
-
-parser = argparse.ArgumentParser(description='Find accidental limericks in any text.')
-parser.add_argument('--text',
-                   help='the file you want to search for limericks in, ie "ulysses.txt"')
-args = parser.parse_args()
-
+import poetry
+import sys
+import urllib2
 
 def overflows_line(syllable_counter, current_sylct):
     ''' return true if the word would overflow the line '''
@@ -107,14 +103,25 @@ def find_limericks(tokens, linebreak):
     return limericks
 
 
-# handle web version
-if cgi.FieldStorage():
+def read_from_file(file_path):
+    with open(file_path) as f:
+        text = f.read().strip()
+    return text
+
+
+def read_from_url(url):
+    text = urllib2.urlopen(url).read().strip()
+    return text
+
+
+def cgi_main():
     url = cgi.FieldStorage()['url'].value
     if url[-4:] != ".txt":
         print "Content-type: text/html\n\n"
         print "Sorry, Nantucket only works with links to .txt files at the moment!<br><br>"
     else:
-        tokens = poetry.tokenize_from_url(url)
+        text = read_from_url(url)
+        tokens = poetry.tokenize_text(text)
         limericks = find_limericks(tokens, "<br>")
         print "Content-type: text/html\n\n"
         if limericks == []:
@@ -126,9 +133,19 @@ if cgi.FieldStorage():
                 print "<br><br>"
     print "<a href='/nantucket/nantucket.html'>Return to Nantucket to find more limericks!</a>"
 
-# handle command line version
-if args:
-    tokens = poetry.tokenize(args.text)
+
+def main():
+    parser = argparse.ArgumentParser(description='Find accidental limericks in any text.')
+    parser.add_argument('--text',
+                       help='the file you want to search for limericks in, ie "ulysses.txt"')
+    args = parser.parse_args()
+
+    if not(args and args.text):
+        parser.print_help()
+        sys.exit()
+
+    text = read_from_file(args.text)
+    tokens = poetry.tokenize_text(text)
     limericks = find_limericks(tokens, "\n")
     if limericks == []:
         print "Sorry, there were no limericks found in your text!"
@@ -136,3 +153,12 @@ if args:
         for limerick in limericks:
             limerick = " ".join(limerick)
             print limerick
+
+
+if __name__ == "__main__":
+    # handle web version
+    if cgi.FieldStorage():
+      cgi_main()
+
+    # handle command line version
+    main()
